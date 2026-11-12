@@ -26,20 +26,30 @@ export const getPokopiaSpriteUrl = (spriteId?: string): string | null => {
   return `https://raw.githubusercontent.com/armindoneto/pokedex/main/pokedex/${id}.png`;
 };
 
-// Interpreta o texto de importação: uma linha por Pokémon, no formato "numero,sprite,nome"
+// Interpreta o texto de importação: uma linha por Pokémon, no formato "numero sprite nome"
 const parsePokopiaImportText = (text: string) => {
   const valid: { number: string; spriteId: string; name: string }[] = [];
   const invalid: string[] = [];
   text.split('\n').forEach(raw => {
     const line = raw.trim();
     if (!line) return;
-    const parts = line.split(',').map(p => p.trim());
+    // Aceita tabulação (colado de planilha), vírgula, ponto e vírgula ou espaços.
+    // Os valores são mantidos como texto, preservando zeros à esquerda (ex.: "001").
+    let parts: string[];
+    if (line.includes('\t')) parts = line.split('\t');
+    else if (line.includes(';')) parts = line.split(';');
+    else if (line.includes(',')) parts = line.split(',');
+    else {
+      const m = line.match(/^(\S+)\s+(\S+)\s+(.+)$/);
+      parts = m ? [m[1], m[2], m[3]] : [line];
+    }
+    parts = parts.map(p => p.trim());
     if (parts.length < 3) {
       invalid.push(line);
       return;
     }
     const [number, spriteId, ...rest] = parts;
-    const name = rest.join(', ').trim();
+    const name = rest.filter(Boolean).join(' ').trim();
     if (!number || !name) {
       invalid.push(line);
       return;
@@ -629,7 +639,7 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
                   Importar Lista
                 </h3>
                 <p className="text-xs text-text-muted">
-                  Uma linha por Pokémon, no formato <strong className="text-white font-mono">número, sprite, nome</strong>.
+                  Uma linha por Pokémon: <strong className="text-white font-mono">número, sprite e nome</strong>, separados por tabulação (colado de planilha), vírgula ou espaço. Zeros à esquerda são mantidos.
                 </p>
               </div>
               <button
@@ -660,14 +670,14 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
                 rows={9}
                 value={importText}
                 onChange={e => setImportText(e.target.value)}
-                placeholder={`1,1,Bulbasaur\n2,2,Ivysaur\n3,3,Venusaur`}
+                placeholder={`001\t001\tBulbasaur\n002\t002\tIvysaur\n010\t016\tPidgey`}
                 className="w-full bg-bg-surface-med/60 border border-outline-variant/40 rounded-2xl p-3.5 text-xs font-mono text-white placeholder-text-muted/40 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
               />
             </div>
 
             {parsedImport.invalid.length > 0 && (
               <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-3 text-[11px] text-rose-300 space-y-1">
-                <p className="font-semibold">Linhas ignoradas (precisam de 3 campos separados por vírgula):</p>
+                <p className="font-semibold">Linhas ignoradas (precisam de 3 campos: número, sprite e nome):</p>
                 {parsedImport.invalid.slice(0, 5).map((l, i) => (
                   <p key={i} className="font-mono truncate">{l}</p>
                 ))}
