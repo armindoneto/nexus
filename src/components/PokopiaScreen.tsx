@@ -77,25 +77,26 @@ export const getComfortBadgeStyle = (comfort: PokopiaComfort) => {
 };
 
 // Helper button styles for Habitat filter buttons
+// Selecionado: fundo sólido + texto branco, legível tanto no tema escuro quanto no claro
 export const getHabitatFilterButtonStyle = (habitat: PokopiaHabitat, isSelected: boolean) => {
   if (!isSelected) {
     return 'bg-bg-surface-med/40 text-text-muted hover:text-white hover:bg-bg-surface-med/70 border-outline-variant/30';
   }
   switch (habitat) {
     case 'Befriended':
-      return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/60 shadow-sm shadow-emerald-500/20';
+      return 'bg-emerald-600 text-white border-emerald-500 shadow-sm shadow-emerald-600/30';
     case 'Not Met':
-      return 'bg-neutral-800 text-neutral-200 border-neutral-600 shadow-sm';
+      return 'bg-neutral-700 text-white border-neutral-500 shadow-sm';
     case 'Pallet Town':
-      return 'bg-blue-500/20 text-blue-300 border-blue-500/60 shadow-sm shadow-blue-500/20';
+      return 'bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-600/30';
     case 'Withered Wastelands':
-      return 'bg-amber-600/20 text-amber-300 border-amber-600/60 shadow-sm shadow-amber-600/20';
+      return 'bg-amber-600 text-white border-amber-500 shadow-sm shadow-amber-600/30';
     case 'Rocky Ridges':
-      return 'bg-stone-500/20 text-stone-200 border-stone-500/60 shadow-sm shadow-stone-500/20';
+      return 'bg-stone-600 text-white border-stone-500 shadow-sm shadow-stone-600/30';
     case 'Bleak Beach':
-      return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/60 shadow-sm shadow-cyan-500/20';
+      return 'bg-cyan-700 text-white border-cyan-600 shadow-sm shadow-cyan-700/30';
     case 'Sparkling Skylands':
-      return 'bg-purple-500/20 text-purple-300 border-purple-500/60 shadow-sm shadow-purple-500/20';
+      return 'bg-purple-600 text-white border-purple-500 shadow-sm shadow-purple-600/30';
     default:
       return 'bg-white/10 text-white border-white/40 shadow-sm';
   }
@@ -323,7 +324,7 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
               onClick={() => setSelectedHabitatFilter('ALL')}
               className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                 selectedHabitatFilter === 'ALL'
-                  ? 'bg-brand-primary/20 text-brand-primary border-brand-primary/60 shadow-sm shadow-brand-primary/20'
+                  ? 'bg-brand-primary text-black border-brand-primary shadow-sm shadow-brand-primary/30'
                   : 'bg-bg-surface-med/40 text-text-muted hover:text-white hover:bg-bg-surface-med/70 border-outline-variant/30'
               }`}
               aria-pressed={selectedHabitatFilter === 'ALL'}
