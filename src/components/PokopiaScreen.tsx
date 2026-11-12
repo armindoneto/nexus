@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, 
   Search, 
@@ -13,9 +14,17 @@ import {
   MessageSquare,
   CheckCircle2,
   HelpCircle,
-  ChevronDown
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { PokopiaEntry, PokopiaHabitat, PokopiaComfort, PokopiaScreenProps } from '../types';
+
+// Sprite carregado do mesmo repositório usado pelo menu POKEMON (GamesScreen)
+export const getPokopiaSpriteUrl = (spriteId?: string): string | null => {
+  const id = (spriteId || '').trim();
+  if (!id) return null;
+  return `https://raw.githubusercontent.com/armindoneto/pokedex/main/pokedex/${id}.png`;
+};
 
 export const POKOPIA_HABITATS: PokopiaHabitat[] = [
   'Withered Wastelands',
@@ -127,9 +136,35 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
   const [batchInputText, setBatchInputText] = useState('');
   const [ignoreDuplicates, setIgnoreDuplicates] = useState(true);
 
+  // Botão flutuante "voltar ao topo" (mesmo comportamento do menu POKEMON)
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  useEffect(() => {
+    const scroller = document.getElementById('content-scroller') || window;
+    const handleScroll = () => {
+      const scrollTop = scroller instanceof HTMLElement ? scroller.scrollTop : window.scrollY;
+      setShowScrollTop(scrollTop > 300);
+    };
+    scroller.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      scroller.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    const scroller = document.getElementById('content-scroller');
+    if (scroller) {
+      scroller.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   // Quick edit Pokémon name state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [editingSpriteId, setEditingSpriteId] = useState('');
 
   // Calculate parsed valid lines from textarea
   const parsedLines = useMemo(() => {
@@ -197,13 +232,15 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
   const handleStartEditName = (entry: PokopiaEntry) => {
     setEditingId(entry.id);
     setEditingName(entry.name);
+    setEditingSpriteId(entry.spriteId || '');
   };
 
   const handleSaveEditName = (id: string) => {
     const trimmed = editingName.trim();
-    if (trimmed) {
-      setPokopiaEntries(prev => prev.map(p => p.id === id ? { ...p, name: trimmed } : p));
-    }
+    const sprite = editingSpriteId.trim();
+    setPokopiaEntries(prev => prev.map(p => p.id === id
+      ? { ...p, name: trimmed || p.name, spriteId: sprite || undefined }
+      : p));
     setEditingId(null);
   };
 
@@ -226,7 +263,8 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
       if (q) {
         const matchesName = entry.name.toLowerCase().includes(q);
         const matchesHabitat = entry.habitat.toLowerCase().includes(q);
-        if (!matchesName && !matchesHabitat) {
+        const matchesNumber = (entry.number || '').toLowerCase().includes(q);
+        if (!matchesName && !matchesHabitat && !matchesNumber) {
           return false;
         }
       }
@@ -401,7 +439,7 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
             {filteredEntries.map((entry, index) => {
               const isEditing = editingId === entry.id;
               // Comfort e Request estão desativados: todos os cards usam o estilo branco neutro
-              const cardBgStyle = 'bg-white text-neutral-900 border-white/80 shadow-md';
+              const cardBgStyle = 'bg-white text-neutral-900 border-2 border-neutral-400 shadow-md';
               const isWhiteCard = true;
 
               return (
@@ -412,11 +450,37 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
                   {/* Pokémon Name Column */}
                   <div className="col-span-6 flex items-center justify-between md:justify-start gap-2.5">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className={`text-[10px] font-mono font-bold w-6 shrink-0 ${isWhiteCard ? 'text-neutral-400' : 'text-white/60'}`}>
-                        #{index + 1}
+                      <span className={`text-[10px] font-mono font-bold min-w-6 shrink-0 ${isWhiteCard ? 'text-neutral-400' : 'text-white/60'}`}>
+                        #{entry.number || index + 1}
                       </span>
+                      {getPokopiaSpriteUrl(entry.spriteId) ? (
+                        <img
+                          src={getPokopiaSpriteUrl(entry.spriteId)!}
+                          alt={entry.name}
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          className="w-16 h-16 md:w-20 md:h-20 object-contain shrink-0"
+                          onError={e => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+                        />
+                      ) : (
+                        <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-lg bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-300">
+                          <HelpCircle size={20} />
+                        </div>
+                      )}
                       {isEditing ? (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <input
+                            type="text"
+                            value={editingSpriteId}
+                            onChange={e => setEditingSpriteId(e.target.value)}
+                            placeholder="Sprite"
+                            title="Código do sprite (ex.: 001)"
+                            className="w-16 border rounded-lg px-2 py-1 text-xs font-mono font-bold focus:outline-none bg-neutral-100 text-neutral-900 border-neutral-400 focus:border-brand-primary"
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') handleSaveEditName(entry.id);
+                              if (e.key === 'Escape') setEditingId(null);
+                            }}
+                          />
                           <input
                             type="text"
                             value={editingName}
@@ -449,10 +513,10 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
                           <button
                             type="button"
                             onClick={() => handleStartEditName(entry)}
-                            className={`opacity-0 group-hover:opacity-100 transition-opacity p-0.5 ${
+                            className={`md:opacity-0 md:group-hover:opacity-100 transition-opacity p-0.5 ${
                               isWhiteCard ? 'text-neutral-500 hover:text-neutral-900' : 'text-white/60 hover:text-white'
                             }`}
-                            title="Editar nome"
+                            title="Editar nome e sprite"
                           >
                             <Edit2 size={11} />
                           </button>
@@ -600,6 +664,23 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
           </div>
         </div>
       )}
+
+      {/* Floating Scroll to Top Button */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            onClick={scrollToTop}
+            className="fixed bottom-6 md:bottom-24 right-6 z-50 p-3 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 hover:shadow-red-500/30 transition-all border border-red-400/20 cursor-pointer flex items-center justify-center"
+            title="Voltar ao topo"
+            id="pokopia-back-to-top-button"
+          >
+            <ChevronUp size={20} className="stroke-[3]" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
     </div>
   );
