@@ -214,6 +214,7 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
   // Quick edit Pokémon name state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [editingSpriteId, setEditingSpriteId] = useState('');
 
   // Calculate parsed valid lines from textarea
   const parsedLines = useMemo(() => {
@@ -281,13 +282,15 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
   const handleStartEditName = (entry: PokopiaEntry) => {
     setEditingId(entry.id);
     setEditingName(entry.name);
+    setEditingSpriteId(entry.spriteId || '');
   };
 
   const handleSaveEditName = (id: string) => {
     const trimmed = editingName.trim();
-    if (trimmed) {
-      setPokopiaEntries(prev => prev.map(p => p.id === id ? { ...p, name: trimmed } : p));
-    }
+    const sprite = editingSpriteId.trim();
+    setPokopiaEntries(prev => prev.map(p => p.id === id
+      ? { ...p, name: trimmed || p.name, spriteId: sprite || undefined }
+      : p));
     setEditingId(null);
   };
 
@@ -508,7 +511,7 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
             {filteredEntries.map((entry, index) => {
               const isEditing = editingId === entry.id;
               // Comfort e Request estão desativados: todos os cards usam o estilo branco neutro
-              const cardBgStyle = 'bg-white text-neutral-900 border-white/80 shadow-md';
+              const cardBgStyle = 'bg-white text-neutral-900 border-2 border-neutral-400 shadow-md';
               const isWhiteCard = true;
 
               return (
@@ -527,17 +530,29 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
                           src={getPokopiaSpriteUrl(entry.spriteId)!}
                           alt={entry.name}
                           loading="lazy"
-                          className="w-10 h-10 object-contain shrink-0"
-                          style={{ imageRendering: 'pixelated' }}
+                          referrerPolicy="no-referrer"
+                          className="w-16 h-16 md:w-20 md:h-20 object-contain shrink-0"
                           onError={e => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
                         />
                       ) : (
-                        <div className="w-10 h-10 shrink-0 rounded-lg bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-300">
-                          <HelpCircle size={16} />
+                        <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-lg bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-300">
+                          <HelpCircle size={20} />
                         </div>
                       )}
                       {isEditing ? (
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <input
+                            type="text"
+                            value={editingSpriteId}
+                            onChange={e => setEditingSpriteId(e.target.value)}
+                            placeholder="Sprite"
+                            title="Código do sprite (ex.: 001)"
+                            className="w-16 border rounded-lg px-2 py-1 text-xs font-mono font-bold focus:outline-none bg-neutral-100 text-neutral-900 border-neutral-400 focus:border-brand-primary"
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') handleSaveEditName(entry.id);
+                              if (e.key === 'Escape') setEditingId(null);
+                            }}
+                          />
                           <input
                             type="text"
                             value={editingName}
@@ -570,10 +585,10 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
                           <button
                             type="button"
                             onClick={() => handleStartEditName(entry)}
-                            className={`opacity-0 group-hover:opacity-100 transition-opacity p-0.5 ${
+                            className={`md:opacity-0 md:group-hover:opacity-100 transition-opacity p-0.5 ${
                               isWhiteCard ? 'text-neutral-500 hover:text-neutral-900' : 'text-white/60 hover:text-white'
                             }`}
-                            title="Editar nome"
+                            title="Editar nome e sprite"
                           >
                             <Edit2 size={11} />
                           </button>
