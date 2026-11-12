@@ -3,11 +3,9 @@ import {
   Sparkles, 
   Search, 
   Plus, 
-  Trash2, 
   X, 
   Edit2, 
   Check, 
-  Filter, 
   AlertCircle,
   FileText,
   Compass,
@@ -79,25 +77,26 @@ export const getComfortBadgeStyle = (comfort: PokopiaComfort) => {
 };
 
 // Helper button styles for Habitat filter buttons
+// Selecionado: fundo sólido + texto branco, legível tanto no tema escuro quanto no claro
 export const getHabitatFilterButtonStyle = (habitat: PokopiaHabitat, isSelected: boolean) => {
   if (!isSelected) {
     return 'bg-bg-surface-med/40 text-text-muted hover:text-white hover:bg-bg-surface-med/70 border-outline-variant/30';
   }
   switch (habitat) {
     case 'Befriended':
-      return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/60 shadow-sm shadow-emerald-500/20';
+      return 'bg-emerald-600 text-white border-emerald-500 shadow-sm shadow-emerald-600/30';
     case 'Not Met':
-      return 'bg-neutral-800 text-neutral-200 border-neutral-600 shadow-sm';
+      return 'bg-neutral-700 text-white border-neutral-500 shadow-sm';
     case 'Pallet Town':
-      return 'bg-blue-500/20 text-blue-300 border-blue-500/60 shadow-sm shadow-blue-500/20';
+      return 'bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-600/30';
     case 'Withered Wastelands':
-      return 'bg-amber-600/20 text-amber-300 border-amber-600/60 shadow-sm shadow-amber-600/20';
+      return 'bg-amber-600 text-white border-amber-500 shadow-sm shadow-amber-600/30';
     case 'Rocky Ridges':
-      return 'bg-stone-500/20 text-stone-200 border-stone-500/60 shadow-sm shadow-stone-500/20';
+      return 'bg-stone-600 text-white border-stone-500 shadow-sm shadow-stone-600/30';
     case 'Bleak Beach':
-      return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/60 shadow-sm shadow-cyan-500/20';
+      return 'bg-cyan-700 text-white border-cyan-600 shadow-sm shadow-cyan-700/30';
     case 'Sparkling Skylands':
-      return 'bg-purple-500/20 text-purple-300 border-purple-500/60 shadow-sm shadow-purple-500/20';
+      return 'bg-purple-600 text-white border-purple-500 shadow-sm shadow-purple-600/30';
     default:
       return 'bg-white/10 text-white border-white/40 shadow-sm';
   }
@@ -131,9 +130,6 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
   // Quick edit Pokémon name state
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
-
-  // Clear requests confirmation modal state
-  const [isClearAllModalOpen, setIsClearAllModalOpen] = useState(false);
 
   // Calculate parsed valid lines from textarea
   const parsedLines = useMemo(() => {
@@ -193,60 +189,9 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
     setIsAddModalOpen(false);
   };
 
-  // Helper card styles based on request checkbox and content
-  const getPokemonCardStyle = (entry: PokopiaEntry) => {
-    const isChecked = entry.comfort === 'Awesome' || !!entry.requestCompleted;
-    const hasRequestText = entry.request.trim().length > 0;
-
-    if (isChecked) {
-      // Green card
-      return 'bg-emerald-950/40 border-emerald-500/50 hover:border-emerald-400 text-white shadow-emerald-950/20';
-    }
-
-    if (hasRequestText && !isChecked) {
-      // Red card
-      return 'bg-rose-950/40 border-rose-500/50 hover:border-rose-400 text-white shadow-rose-950/20';
-    }
-
-    // White card (clean neutral-white card)
-    return 'bg-white text-neutral-900 border-white/80 shadow-md';
-  };
-
   // Update entry helpers
   const handleUpdateHabitat = (id: string, newHabitat: PokopiaHabitat) => {
     setPokopiaEntries(prev => prev.map(p => p.id === id ? { ...p, habitat: newHabitat } : p));
-  };
-
-  const handleUpdateComfort = (id: string, newComfort: PokopiaComfort) => {
-    setPokopiaEntries(prev => prev.map(p => {
-      if (p.id !== id) return p;
-      const isAwesome = newComfort === 'Awesome';
-      return { 
-        ...p, 
-        comfort: newComfort,
-        requestCompleted: isAwesome ? true : p.requestCompleted
-      };
-    }));
-  };
-
-  const handleUpdateRequest = (id: string, newRequest: string) => {
-    setPokopiaEntries(prev => prev.map(p => p.id === id ? { ...p, request: newRequest } : p));
-  };
-
-  const handleToggleRequestCompleted = (id: string) => {
-    setPokopiaEntries(prev => prev.map(p => {
-      if (p.id !== id) return p;
-      if (p.comfort === 'Awesome') {
-        // Se comfort for Awesome, a checkbox está sempre marcada
-        return { ...p, requestCompleted: true };
-      }
-      return { ...p, requestCompleted: !p.requestCompleted };
-    }));
-  };
-
-  const handleClearRequest = (id: string) => {
-    setPokopiaEntries(prev => prev.map(p => p.id === id ? { ...p, request: '' } : p));
-    triggerToast('Request removido.');
   };
 
   const handleStartEditName = (entry: PokopiaEntry) => {
@@ -262,17 +207,6 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
     setEditingId(null);
   };
 
-  const handleClearRequestsAndCheckboxes = () => {
-    setPokopiaEntries(prev => prev.map(p => ({
-      ...p,
-      request: '',
-      // Se conforto for Awesome, a checkbox permanece marcada; caso contrário, é desmarcada
-      requestCompleted: p.comfort === 'Awesome'
-    })));
-    setIsClearAllModalOpen(false);
-    triggerToast('Requests limpos e checkboxes desmarcadas com sucesso.');
-  };
-
   // Stats calculation
   const stats = useMemo(() => {
     const total = pokopiaEntries.length;
@@ -280,10 +214,8 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
     const befriended = pokopiaEntries.filter(p => p.habitat !== 'Not Met').length;
     const notMet = pokopiaEntries.filter(p => p.habitat === 'Not Met').length;
     const inHabitats = pokopiaEntries.filter(p => p.habitat !== 'Not Met' && p.habitat !== 'Befriended').length;
-    const withRequest = pokopiaEntries.filter(p => p.request.trim().length > 0).length;
-    const withComfort = pokopiaEntries.filter(p => p.comfort.length > 0).length;
 
-    return { total, befriended, notMet, inHabitats, withRequest, withComfort };
+    return { total, befriended, notMet, inHabitats };
   }, [pokopiaEntries]);
 
   // Filtered entries
@@ -293,9 +225,8 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
       // Search
       if (q) {
         const matchesName = entry.name.toLowerCase().includes(q);
-        const matchesRequest = entry.request.toLowerCase().includes(q);
         const matchesHabitat = entry.habitat.toLowerCase().includes(q);
-        if (!matchesName && !matchesRequest && !matchesHabitat) {
+        if (!matchesName && !matchesHabitat) {
           return false;
         }
       }
@@ -335,20 +266,6 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
           >
             <Plus size={18} strokeWidth={3} />
           </button>
-
-          {/* Botão de lixeira: apaga requests e desmarca checkboxes */}
-          {pokopiaEntries.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setIsClearAllModalOpen(true)}
-              className="w-8 h-8 rounded-xl bg-bg-surface-med/60 border border-outline-variant/30 hover:border-red-500/40 hover:text-red-400 text-text-muted transition-all flex items-center justify-center cursor-pointer"
-              title="Limpar todos os requests e desmarcar checkboxes"
-              aria-label="Limpar todos os requests e desmarcar checkboxes"
-              id="btn-open-clear-all-pokopia"
-            >
-              <Trash2 size={15} />
-            </button>
-          )}
         </div>
       </div>
 
@@ -376,15 +293,15 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
         </div>
       </div>
 
-      {/* Search and Habitat Filter Dropdown Bar */}
+      {/* Search and Habitat Filter Buttons */}
       <div className="bg-bg-surface-low border border-outline-variant/40 rounded-3xl p-4 sm:p-5 shadow-lg" id="pokopia-filters-box">
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+        <div className="space-y-3">
           {/* Search Box */}
-          <div className="sm:col-span-7 relative bg-bg-surface-med/40 rounded-2xl border border-outline-variant/30 px-3.5 py-2.5 flex items-center gap-2">
+          <div className="relative bg-bg-surface-med/40 rounded-2xl border border-outline-variant/30 px-3.5 py-2.5 flex items-center gap-2">
             <Search size={16} className="text-text-muted shrink-0" />
             <input
               type="text"
-              placeholder="Buscar por Pokémon ou request..."
+              placeholder="Buscar por Pokémon ou habitat..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               className="w-full bg-transparent text-xs text-white placeholder-text-muted/60 focus:outline-none"
@@ -400,42 +317,35 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
             )}
           </div>
 
-          {/* Habitat Dropdown Filter */}
-          <div className="sm:col-span-5 flex items-center gap-2 bg-bg-surface-med border border-outline-variant/40 rounded-2xl px-3.5 py-2 shadow-inner">
-            <Filter size={15} className="text-brand-primary shrink-0" />
-            <div className="flex-1 flex flex-col min-w-0">
-              <label htmlFor="pokopia-habitat-filter-select" className="text-[10px] font-mono font-bold uppercase tracking-wider text-text-muted leading-tight">
-                Habitat:
-              </label>
-              <div className="relative flex items-center">
-                <select
-                  id="pokopia-habitat-filter-select"
-                  value={selectedHabitatFilter}
-                  onChange={e => setSelectedHabitatFilter(e.target.value)}
-                  className="w-full appearance-none bg-transparent text-xs font-bold text-text-high focus:outline-none cursor-pointer py-0.5 pr-5"
+          {/* Habitat Filter Buttons: todas as opções visíveis, clique ativa o filtro */}
+          <div className="flex flex-wrap gap-2" id="pokopia-habitat-filter-buttons">
+            <button
+              type="button"
+              onClick={() => setSelectedHabitatFilter('ALL')}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                selectedHabitatFilter === 'ALL'
+                  ? 'bg-brand-primary text-black border-brand-primary shadow-sm shadow-brand-primary/30'
+                  : 'bg-bg-surface-med/40 text-text-muted hover:text-white hover:bg-bg-surface-med/70 border-outline-variant/30'
+              }`}
+              aria-pressed={selectedHabitatFilter === 'ALL'}
+            >
+              Todos <span className="font-mono opacity-80">({pokopiaEntries.length})</span>
+            </button>
+            {POKOPIA_HABITATS.map(h => {
+              const isSelected = selectedHabitatFilter === h;
+              return (
+                <button
+                  key={h}
+                  type="button"
+                  onClick={() => setSelectedHabitatFilter(isSelected ? 'ALL' : h)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${getHabitatFilterButtonStyle(h, isSelected)}`}
+                  aria-pressed={isSelected}
+                  title={isSelected ? 'Clique novamente para mostrar todos' : `Filtrar por ${h}`}
                 >
-                  <option value="ALL" className="bg-bg-surface-high text-text-high py-1">
-                    Todos os Habitats ({pokopiaEntries.length})
-                  </option>
-                  {POKOPIA_HABITATS.map(h => (
-                    <option key={h} value={h} className="bg-bg-surface-high text-text-high py-1">
-                      {h} ({habitatCounts[h] || 0})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="text-text-muted pointer-events-none absolute right-0" />
-              </div>
-            </div>
-            {selectedHabitatFilter !== 'ALL' && (
-              <button
-                type="button"
-                onClick={() => setSelectedHabitatFilter('ALL')}
-                className="text-text-muted hover:text-white text-xs font-mono p-1 rounded-lg hover:bg-white/10 shrink-0"
-                title="Limpar filtro de habitat"
-              >
-                <X size={13} />
-              </button>
-            )}
+                  {h} <span className="font-mono opacity-80">({habitatCounts[h] || 0})</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -482,19 +392,17 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
         <div className="space-y-3" id="pokopia-items-cards">
           {/* Table Header (Desktop) */}
           <div className="hidden md:grid md:grid-cols-12 gap-3 px-5 py-2.5 bg-bg-surface-med/30 border border-outline-variant/30 rounded-2xl text-[11px] font-mono font-bold text-text-muted uppercase tracking-wider">
-            <div className="col-span-3">Pokémon</div>
-            <div className="col-span-3">Habitat</div>
-            <div className="col-span-2">Comfort</div>
-            <div className="col-span-4">Request & Check</div>
+            <div className="col-span-6">Pokémon</div>
+            <div className="col-span-6">Habitat</div>
           </div>
 
-          {/* Individual Pokémon Cards with conditional background colors */}
+          {/* Individual Pokémon Cards */}
           <div className="space-y-2.5">
             {filteredEntries.map((entry, index) => {
               const isEditing = editingId === entry.id;
-              const isChecked = entry.comfort === 'Awesome' || !!entry.requestCompleted;
-              const cardBgStyle = getPokemonCardStyle(entry);
-              const isWhiteCard = !isChecked && entry.request.trim().length === 0;
+              // Comfort e Request estão desativados: todos os cards usam o estilo branco neutro
+              const cardBgStyle = 'bg-white text-neutral-900 border-white/80 shadow-md';
+              const isWhiteCard = true;
 
               return (
                 <div
@@ -502,7 +410,7 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
                   className={`p-4 sm:px-5 sm:py-3.5 rounded-2xl border transition-all duration-200 flex flex-col md:grid md:grid-cols-12 gap-3 md:items-center ${cardBgStyle}`}
                 >
                   {/* Pokémon Name Column */}
-                  <div className="col-span-3 flex items-center justify-between md:justify-start gap-2.5">
+                  <div className="col-span-6 flex items-center justify-between md:justify-start gap-2.5">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className={`text-[10px] font-mono font-bold w-6 shrink-0 ${isWhiteCard ? 'text-neutral-400' : 'text-white/60'}`}>
                         #{index + 1}
@@ -554,7 +462,7 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
                   </div>
 
                   {/* Habitat Column */}
-                  <div className="col-span-3">
+                  <div className="col-span-6">
                     <div className="flex items-center gap-2">
                       <span className={`md:hidden text-[10px] font-mono font-bold w-16 shrink-0 ${isWhiteCard ? 'text-neutral-500' : 'text-white/70'}`}>
                         Habitat:
@@ -589,111 +497,6 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
                     </div>
                   </div>
 
-                  {/* Comfort Column */}
-                  <div className="col-span-2">
-                    <div className="flex items-center gap-2">
-                      <span className={`md:hidden text-[10px] font-mono font-bold w-16 shrink-0 ${isWhiteCard ? 'text-neutral-500' : 'text-white/70'}`}>
-                        Comfort:
-                      </span>
-                      <div className="relative w-full flex items-center">
-                        <select
-                          value={entry.comfort}
-                          onChange={e => handleUpdateComfort(entry.id, e.target.value as PokopiaComfort)}
-                          className={`w-full appearance-none text-xs font-semibold rounded-xl border pl-2.5 pr-6 py-1.5 focus:outline-none transition-colors cursor-pointer ${
-                            isWhiteCard
-                              ? 'bg-neutral-100 text-neutral-800 border-neutral-300 hover:border-neutral-400'
-                              : `${getComfortBadgeStyle(entry.comfort)} hover:brightness-110`
-                          }`}
-                        >
-                          {POKOPIA_COMFORTS.map(c => (
-                            <option 
-                              key={c.value} 
-                              value={c.value} 
-                              className={isWhiteCard ? 'bg-white text-neutral-900 py-1' : 'bg-bg-surface-high text-text-high py-1'}
-                            >
-                              {c.label}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown 
-                          size={13} 
-                          className={`pointer-events-none absolute right-2 ${
-                            isWhiteCard ? 'text-neutral-500' : 'text-white/70'
-                          }`} 
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Request Column + Checkbox on Right */}
-                  <div className="col-span-4">
-                    <div className="flex items-center gap-2">
-                      <span className={`md:hidden text-[10px] font-mono font-bold w-16 shrink-0 ${isWhiteCard ? 'text-neutral-500' : 'text-white/70'}`}>
-                        Request:
-                      </span>
-                      <div className="relative flex-1">
-                        <input
-                          type="text"
-                          placeholder="Adicionar request..."
-                          value={entry.request}
-                          onChange={e => handleUpdateRequest(entry.id, e.target.value)}
-                          className={`w-full text-xs rounded-xl px-2.5 py-1.5 border transition-colors focus:outline-none ${
-                            isWhiteCard
-                              ? 'bg-neutral-100 text-neutral-900 border-neutral-300 focus:border-brand-primary placeholder-neutral-400'
-                              : 'bg-black/30 text-white border-white/20 focus:border-white/50 placeholder-white/40'
-                          } ${entry.request.trim() ? 'pr-7' : ''}`}
-                        />
-                        {entry.request.trim() && (
-                          <button
-                            type="button"
-                            onClick={() => handleClearRequest(entry.id)}
-                            className={`absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded cursor-pointer ${
-                              isWhiteCard ? 'text-neutral-400 hover:text-red-600' : 'text-white/60 hover:text-red-400'
-                            }`}
-                            title="Limpar request"
-                          >
-                            <X size={13} />
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Checkbox / Botão ao lado direito do Request */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          if (entry.comfort !== 'Awesome') {
-                            handleToggleRequestCompleted(entry.id);
-                          }
-                        }}
-                        disabled={entry.comfort === 'Awesome'}
-                        className={`flex items-center justify-center w-7 h-7 rounded-xl border select-none shrink-0 transition-all ${
-                          isChecked 
-                            ? 'bg-emerald-500 border-emerald-400 text-white shadow-sm shadow-emerald-500/30 cursor-pointer' 
-                            : isWhiteCard
-                              ? 'bg-neutral-100 border-neutral-300 hover:border-neutral-400 text-neutral-300 cursor-pointer'
-                              : 'bg-black/30 border-white/30 hover:border-white/60 text-white/20 cursor-pointer'
-                        } ${entry.comfort === 'Awesome' ? 'cursor-not-allowed opacity-90' : ''}`}
-                        title={
-                          entry.comfort === 'Awesome' 
-                            ? 'Marcado automaticamente (Comfort: Awesome)' 
-                            : isChecked 
-                              ? 'Request concluído (Card verde)' 
-                              : 'Marcar request como concluído'
-                        }
-                        aria-label={isChecked ? 'Request concluído' : 'Marcar request como concluído'}
-                        role="checkbox"
-                        aria-checked={isChecked}
-                      >
-                        <Check 
-                          size={14} 
-                          strokeWidth={isChecked ? 3.5 : 2} 
-                          className={isChecked ? 'text-white' : 'opacity-0'} 
-                        />
-                      </button>
-                    </div>
-                  </div>
                 </div>
               );
             })}
@@ -734,8 +537,6 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
                 <AlertCircle size={13} className="text-brand-primary" /> Regras de inicialização:
               </div>
               <p>• Todo Pokémon é adicionado inicialmente com Habitat <strong className="text-white">Not Met</strong>.</p>
-              <p>• O parâmetro Comfort inicia <strong className="text-white">vazio</strong>.</p>
-              <p>• O parâmetro Request poderá ser preenchido a qualquer momento.</p>
             </div>
 
             {/* Textarea Input */}
@@ -800,41 +601,6 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
         </div>
       )}
 
-
-      {/* Clear Requests and Checkboxes Confirmation Modal */}
-      {isClearAllModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-bg-surface-low border border-amber-500/40 rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 animate-scale-up text-left">
-            <h3 className="font-display font-black text-base text-white flex items-center gap-2">
-              <AlertCircle size={18} className="text-amber-400" />
-              Limpar Requests e Checkboxes
-            </h3>
-            <p className="text-xs text-text-muted leading-relaxed">
-              Deseja apagar os textos de todos os requests e desmarcar as checkboxes de todos os Pokémons?
-              <br />
-              <span className="text-[11px] text-text-muted/80 block mt-1">
-                (Atenção: Pokémons com conforto <strong className="text-amber-400 font-bold">Awesome</strong> permanecerão marcados automaticamente).
-              </span>
-            </p>
-            <div className="flex items-center justify-end gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => setIsClearAllModalOpen(false)}
-                className="px-3.5 py-2 rounded-xl bg-bg-surface-med text-text-muted hover:text-white text-xs font-semibold cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleClearRequestsAndCheckboxes}
-                className="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-600 text-white font-display font-black text-xs uppercase tracking-wider cursor-pointer"
-              >
-                Confirmar e Limpar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

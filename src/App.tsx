@@ -372,7 +372,9 @@ export default function App() {
 
   // --- Theme State ---
   const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    return (localStorage.getItem('app-theme') as 'dark' | 'light') || 'dark';
+    // Padrão: modo claro. Chave 'app-theme-v2' (a antiga 'app-theme' gravava 'dark'
+    // automaticamente em todo acesso, o que impediria o novo padrão de valer).
+    return (localStorage.getItem('app-theme-v2') as 'dark' | 'light') || 'light';
   });
 
   useEffect(() => {
@@ -381,7 +383,7 @@ export default function App() {
     } else {
       document.documentElement.classList.remove('light');
     }
-    localStorage.setItem('app-theme', theme);
+    localStorage.setItem('app-theme-v2', theme);
   }, [theme]);
 
   // --- Persistent States ---
