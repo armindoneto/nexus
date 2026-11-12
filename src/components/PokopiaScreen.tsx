@@ -6,7 +6,6 @@ import {
   X, 
   Edit2, 
   Check, 
-  Filter, 
   AlertCircle,
   FileText,
   Compass,
@@ -293,11 +292,11 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
         </div>
       </div>
 
-      {/* Search and Habitat Filter Dropdown Bar */}
+      {/* Search and Habitat Filter Buttons */}
       <div className="bg-bg-surface-low border border-outline-variant/40 rounded-3xl p-4 sm:p-5 shadow-lg" id="pokopia-filters-box">
-        <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-center">
+        <div className="space-y-3">
           {/* Search Box */}
-          <div className="sm:col-span-7 relative bg-bg-surface-med/40 rounded-2xl border border-outline-variant/30 px-3.5 py-2.5 flex items-center gap-2">
+          <div className="relative bg-bg-surface-med/40 rounded-2xl border border-outline-variant/30 px-3.5 py-2.5 flex items-center gap-2">
             <Search size={16} className="text-text-muted shrink-0" />
             <input
               type="text"
@@ -317,42 +316,35 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
             )}
           </div>
 
-          {/* Habitat Dropdown Filter */}
-          <div className="sm:col-span-5 flex items-center gap-2 bg-bg-surface-med border border-outline-variant/40 rounded-2xl px-3.5 py-2 shadow-inner">
-            <Filter size={15} className="text-brand-primary shrink-0" />
-            <div className="flex-1 flex flex-col min-w-0">
-              <label htmlFor="pokopia-habitat-filter-select" className="text-[10px] font-mono font-bold uppercase tracking-wider text-text-muted leading-tight">
-                Habitat:
-              </label>
-              <div className="relative flex items-center">
-                <select
-                  id="pokopia-habitat-filter-select"
-                  value={selectedHabitatFilter}
-                  onChange={e => setSelectedHabitatFilter(e.target.value)}
-                  className="w-full appearance-none bg-transparent text-xs font-bold text-text-high focus:outline-none cursor-pointer py-0.5 pr-5"
+          {/* Habitat Filter Buttons: todas as opções visíveis, clique ativa o filtro */}
+          <div className="flex flex-wrap gap-2" id="pokopia-habitat-filter-buttons">
+            <button
+              type="button"
+              onClick={() => setSelectedHabitatFilter('ALL')}
+              className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                selectedHabitatFilter === 'ALL'
+                  ? 'bg-brand-primary/20 text-brand-primary border-brand-primary/60 shadow-sm shadow-brand-primary/20'
+                  : 'bg-bg-surface-med/40 text-text-muted hover:text-white hover:bg-bg-surface-med/70 border-outline-variant/30'
+              }`}
+              aria-pressed={selectedHabitatFilter === 'ALL'}
+            >
+              Todos <span className="font-mono opacity-80">({pokopiaEntries.length})</span>
+            </button>
+            {POKOPIA_HABITATS.map(h => {
+              const isSelected = selectedHabitatFilter === h;
+              return (
+                <button
+                  key={h}
+                  type="button"
+                  onClick={() => setSelectedHabitatFilter(isSelected ? 'ALL' : h)}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${getHabitatFilterButtonStyle(h, isSelected)}`}
+                  aria-pressed={isSelected}
+                  title={isSelected ? 'Clique novamente para mostrar todos' : `Filtrar por ${h}`}
                 >
-                  <option value="ALL" className="bg-bg-surface-high text-text-high py-1">
-                    Todos os Habitats ({pokopiaEntries.length})
-                  </option>
-                  {POKOPIA_HABITATS.map(h => (
-                    <option key={h} value={h} className="bg-bg-surface-high text-text-high py-1">
-                      {h} ({habitatCounts[h] || 0})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={14} className="text-text-muted pointer-events-none absolute right-0" />
-              </div>
-            </div>
-            {selectedHabitatFilter !== 'ALL' && (
-              <button
-                type="button"
-                onClick={() => setSelectedHabitatFilter('ALL')}
-                className="text-text-muted hover:text-white text-xs font-mono p-1 rounded-lg hover:bg-white/10 shrink-0"
-                title="Limpar filtro de habitat"
-              >
-                <X size={13} />
-              </button>
-            )}
+                  {h} <span className="font-mono opacity-80">({habitatCounts[h] || 0})</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
