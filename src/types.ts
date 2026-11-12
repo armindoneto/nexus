@@ -279,6 +279,8 @@ export type PokopiaComfort =
 export interface PokopiaEntry {
   id: string;
   name: string;
+  number?: string;   // número do Pokémon na lista (opcional: entradas antigas não têm)
+  spriteId?: string; // id do sprite no repositório armindoneto/pokedex (opcional)
   habitat: PokopiaHabitat;
   comfort: PokopiaComfort;
   request: string;
