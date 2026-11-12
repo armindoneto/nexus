@@ -3997,6 +3997,23 @@ alter publication supabase_realtime add table public.nocturne_data;`}
                       <Play size={14} />
                       <span>TO PLAY</span>
                     </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveScreen('pokopia');
+                        setActiveModule('games');
+                      }}
+                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-[10px] font-black tracking-widest uppercase font-display transition-all cursor-pointer ${
+                        activeScreen === 'pokopia'
+                          ? 'text-brand-primary bg-brand-primary/5'
+                          : 'text-text-muted hover:text-text-high hover:bg-white/5'
+                      }`}
+                      id="btn-sidebar-games-pokopia"
+                    >
+                      <Compass size={14} />
+                      <span>POKOPIA</span>
+                    </button>
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -4082,23 +4099,6 @@ alter publication supabase_realtime add table public.nocturne_data;`}
                     >
                       <ListChecks size={14} />
                       <span>CHECKLISTS</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setActiveScreen('pokopia');
-                        setActiveModule('tools');
-                      }}
-                      className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-[10px] font-black tracking-widest uppercase font-display transition-all cursor-pointer ${
-                        activeScreen === 'pokopia' && activeModule === 'tools'
-                          ? 'text-brand-primary bg-brand-primary/5'
-                          : 'text-text-muted hover:text-text-high hover:bg-white/5'
-                      }`}
-                      id="btn-sidebar-tools-pokopia"
-                    >
-                      <Compass size={14} />
-                      <span>POKOPIA</span>
                     </button>
 
                     <button
@@ -7186,6 +7186,20 @@ alter publication supabase_realtime add table public.nocturne_data;`}
               <Play size={16} />
               <span className="text-[9px] font-black tracking-widest uppercase font-display">TO PLAY</span>
             </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setActiveScreen('pokopia');
+                setActiveModule('games');
+                setShowMobileSubmenu(false);
+              }}
+              className={`flex flex-col items-center gap-1 cursor-pointer transition-all ${activeScreen === 'pokopia' ? 'text-brand-primary scale-105' : 'text-text-muted hover:text-text-high'}`}
+              id="btn-subnav-games-pokopia"
+            >
+              <Compass size={16} />
+              <span className="text-[9px] font-black tracking-widest uppercase font-display">POKOPIA</span>
+            </button>
           </motion.div>
         )}
       </AnimatePresence>
@@ -7240,20 +7254,6 @@ alter publication supabase_realtime add table public.nocturne_data;`}
             >
               <ListChecks size={16} />
               <span className="text-[8px] font-black tracking-widest uppercase font-display">LISTS</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setActiveScreen('pokopia');
-                setActiveModule('tools');
-                setShowMobileSubmenu(false);
-              }}
-              className={`flex flex-col items-center gap-1 cursor-pointer transition-all ${activeScreen === 'pokopia' && activeModule === 'tools' ? 'text-brand-primary scale-105' : 'text-text-muted hover:text-text-high'}`}
-              id="btn-subnav-tools-pokopia"
-            >
-              <Compass size={16} />
-              <span className="text-[8px] font-black tracking-widest uppercase font-display">POKOPIA</span>
             </button>
 
             <button

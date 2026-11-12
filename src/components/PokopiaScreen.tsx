@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Sparkles, 
   Search, 
@@ -14,8 +15,7 @@ import {
   CheckCircle2,
   HelpCircle,
   ChevronDown,
-  Trash2,
-  Upload
+  ChevronUp
 } from 'lucide-react';
 import { PokopiaEntry, PokopiaHabitat, PokopiaComfort, PokopiaScreenProps } from '../types';
 
@@ -24,39 +24,6 @@ export const getPokopiaSpriteUrl = (spriteId?: string): string | null => {
   const id = (spriteId || '').trim();
   if (!id) return null;
   return `https://raw.githubusercontent.com/armindoneto/pokedex/main/pokedex/${id}.png`;
-};
-
-// Interpreta o texto de importação: uma linha por Pokémon, no formato "numero sprite nome"
-const parsePokopiaImportText = (text: string) => {
-  const valid: { number: string; spriteId: string; name: string }[] = [];
-  const invalid: string[] = [];
-  text.split('\n').forEach(raw => {
-    const line = raw.trim();
-    if (!line) return;
-    // Aceita tabulação (colado de planilha), vírgula, ponto e vírgula ou espaços.
-    // Os valores são mantidos como texto, preservando zeros à esquerda (ex.: "001").
-    let parts: string[];
-    if (line.includes('\t')) parts = line.split('\t');
-    else if (line.includes(';')) parts = line.split(';');
-    else if (line.includes(',')) parts = line.split(',');
-    else {
-      const m = line.match(/^(\S+)\s+(\S+)\s+(.+)$/);
-      parts = m ? [m[1], m[2], m[3]] : [line];
-    }
-    parts = parts.map(p => p.trim());
-    if (parts.length < 3) {
-      invalid.push(line);
-      return;
-    }
-    const [number, spriteId, ...rest] = parts;
-    const name = rest.filter(Boolean).join(' ').trim();
-    if (!number || !name) {
-      invalid.push(line);
-      return;
-    }
-    valid.push({ number, spriteId, name });
-  });
-  return { valid, invalid };
 };
 
 export const POKOPIA_HABITATS: PokopiaHabitat[] = [
@@ -169,46 +136,29 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
   const [batchInputText, setBatchInputText] = useState('');
   const [ignoreDuplicates, setIgnoreDuplicates] = useState(true);
 
-  // [TEMPORÁRIO] Importação de nova lista "numero,sprite,nome"
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [importText, setImportText] = useState('');
-  const parsedImport = useMemo(() => parsePokopiaImportText(importText), [importText]);
+  // Botão flutuante "voltar ao topo" (mesmo comportamento do menu POKEMON)
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  useEffect(() => {
+    const scroller = document.getElementById('content-scroller') || window;
+    const handleScroll = () => {
+      const scrollTop = scroller instanceof HTMLElement ? scroller.scrollTop : window.scrollY;
+      setShowScrollTop(scrollTop > 300);
+    };
+    scroller.addEventListener('scroll', handleScroll);
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      scroller.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
-  // [TEMPORÁRIO] Apagar toda a lista
-  const handleDeleteAll = () => {
-    if (pokopiaEntries.length === 0) {
-      triggerToast('A lista já está vazia.');
-      return;
+  const scrollToTop = () => {
+    const scroller = document.getElementById('content-scroller');
+    if (scroller) {
+      scroller.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-    if (!window.confirm(`Apagar TODOS os ${pokopiaEntries.length} Pokémons da lista do POKOPIA? Essa ação não pode ser desfeita.`)) return;
-    if (!window.confirm('Confirma mesmo? Recomenda-se exportar um backup antes.')) return;
-    setPokopiaEntries([]);
-    setSelectedHabitatFilter('ALL');
-    setSearchQuery('');
-    triggerToast('Lista do POKOPIA apagada.');
-  };
-
-  const handleConfirmImport = () => {
-    const { valid } = parsedImport;
-    if (valid.length === 0) {
-      triggerToast('Nenhuma linha válida para importar.');
-      return;
-    }
-    const now = new Date().toISOString();
-    const toAdd: PokopiaEntry[] = valid.map((v, i) => ({
-      id: `pkp_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 7)}`,
-      number: v.number,
-      spriteId: v.spriteId || undefined,
-      name: v.name,
-      habitat: 'Not Met',
-      comfort: '',
-      request: '',
-      createdAt: now
-    }));
-    setPokopiaEntries(prev => [...prev, ...toAdd]);
-    triggerToast(`${toAdd.length} Pokémon(s) importado(s) com sucesso!`);
-    setImportText('');
-    setIsImportModalOpen(false);
   };
 
   // Quick edit Pokémon name state
@@ -343,28 +293,6 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
 
         {/* Action Buttons aligned to the right margin of the box */}
         <div className="flex items-center gap-2">
-          {/* [TEMPORÁRIO] Apagar toda a lista */}
-          <button
-            type="button"
-            onClick={handleDeleteAll}
-            className="w-8 h-8 rounded-xl bg-rose-600/15 border border-rose-500/40 text-rose-400 hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center cursor-pointer"
-            title="Apagar toda a lista (temporário)"
-            aria-label="Apagar toda a lista"
-            id="btn-pokopia-delete-all"
-          >
-            <Trash2 size={15} />
-          </button>
-          {/* [TEMPORÁRIO] Importar lista "numero,sprite,nome" */}
-          <button
-            type="button"
-            onClick={() => setIsImportModalOpen(true)}
-            className="w-8 h-8 rounded-xl bg-bg-surface-med/60 border border-outline-variant/40 text-text-high hover:text-white hover:bg-bg-surface-med transition-all flex items-center justify-center cursor-pointer"
-            title="Importar lista: número, sprite, nome (temporário)"
-            aria-label="Importar lista"
-            id="btn-pokopia-import"
-          >
-            <Upload size={15} />
-          </button>
           {/* Botão de adicionar apenas com símbolo de + */}
           <button
             type="button"
@@ -640,112 +568,6 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
         </div>
       )}
 
-      {/* MODAL [TEMPORÁRIO]: Importar lista "numero,sprite,nome" */}
-      {isImportModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div
-            className="bg-bg-surface-low border border-outline-variant/60 rounded-3xl p-6 w-full max-w-xl shadow-2xl space-y-5 animate-scale-up text-left max-h-[90vh] overflow-y-auto"
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <h3 className="font-display font-black text-lg text-white uppercase tracking-wider flex items-center gap-2">
-                  <Upload size={18} className="text-brand-primary" />
-                  Importar Lista
-                </h3>
-                <p className="text-xs text-text-muted">
-                  Uma linha por Pokémon: <strong className="text-white font-mono">número, sprite e nome</strong>, separados por tabulação (colado de planilha), vírgula ou espaço. Zeros à esquerda são mantidos.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsImportModalOpen(false)}
-                className="text-text-muted hover:text-white p-1 rounded-lg"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            <div className="bg-bg-surface-med/50 border border-outline-variant/30 rounded-2xl p-3 text-[11px] text-text-muted space-y-1">
-              <p>• Todos entram com Habitat <strong className="text-white">Not Met</strong>.</p>
-              <p>• Os itens são <strong className="text-white">adicionados</strong> à lista atual. Para substituir, apague a lista antes (botão vermelho).</p>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <label className="font-mono font-bold text-text-high uppercase tracking-wider">Texto:</label>
-                <span className="font-mono text-brand-primary font-bold">
-                  {parsedImport.valid.length} válido(s)
-                  {parsedImport.invalid.length > 0 && (
-                    <span className="text-rose-400"> · {parsedImport.invalid.length} inválido(s)</span>
-                  )}
-                </span>
-              </div>
-              <textarea
-                rows={9}
-                value={importText}
-                onChange={e => setImportText(e.target.value)}
-                placeholder={`001\t001\tBulbasaur\n002\t002\tIvysaur\n010\t016\tPidgey`}
-                className="w-full bg-bg-surface-med/60 border border-outline-variant/40 rounded-2xl p-3.5 text-xs font-mono text-white placeholder-text-muted/40 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
-              />
-            </div>
-
-            {parsedImport.invalid.length > 0 && (
-              <div className="bg-rose-500/10 border border-rose-500/30 rounded-2xl p-3 text-[11px] text-rose-300 space-y-1">
-                <p className="font-semibold">Linhas ignoradas (precisam de 3 campos: número, sprite e nome):</p>
-                {parsedImport.invalid.slice(0, 5).map((l, i) => (
-                  <p key={i} className="font-mono truncate">{l}</p>
-                ))}
-                {parsedImport.invalid.length > 5 && <p>… e mais {parsedImport.invalid.length - 5}</p>}
-              </div>
-            )}
-
-            {parsedImport.valid.length > 0 && (
-              <div className="space-y-1.5">
-                <p className="text-[11px] font-mono font-bold text-text-muted uppercase tracking-wider">Prévia:</p>
-                <div className="grid grid-cols-1 gap-1.5">
-                  {parsedImport.valid.slice(0, 5).map((v, i) => (
-                    <div key={i} className="flex items-center gap-2 bg-white rounded-xl px-3 py-1.5 text-neutral-900">
-                      <span className="text-[10px] font-mono font-bold text-neutral-400 min-w-8">#{v.number}</span>
-                      {getPokopiaSpriteUrl(v.spriteId) ? (
-                        <img src={getPokopiaSpriteUrl(v.spriteId)!} alt={v.name} className="w-8 h-8 object-contain" style={{ imageRendering: 'pixelated' }} />
-                      ) : (
-                        <div className="w-8 h-8" />
-                      )}
-                      <span className="text-xs font-black truncate">{v.name}</span>
-                      <span className="ml-auto text-[10px] font-mono text-neutral-400">sprite {v.spriteId || '—'}</span>
-                    </div>
-                  ))}
-                  {parsedImport.valid.length > 5 && (
-                    <p className="text-[11px] text-text-muted">… e mais {parsedImport.valid.length - 5}</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-outline-variant/20">
-              <button
-                type="button"
-                onClick={() => setIsImportModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-bg-surface-med/50 hover:bg-bg-surface-med text-text-muted hover:text-white text-xs font-semibold transition-all"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmImport}
-                disabled={parsedImport.valid.length === 0}
-                className="px-5 py-2.5 rounded-xl bg-brand-primary text-black font-display font-black text-xs uppercase tracking-wider hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1.5 shadow-lg shadow-brand-primary/20"
-                id="btn-confirm-import-pokopia"
-              >
-                <CheckCircle2 size={14} strokeWidth={2.5} />
-                Importar ({parsedImport.valid.length})
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* MODAL: Adicionar Pokémons (Lista com cada linha = 1 Pokémon) */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
@@ -842,6 +664,23 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
           </div>
         </div>
       )}
+
+      {/* Floating Scroll to Top Button */}
+      <AnimatePresence>
+        {showScrollTop && (
+          <motion.button
+            initial={{ opacity: 0, scale: 0.8, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 20 }}
+            onClick={scrollToTop}
+            className="fixed bottom-6 md:bottom-24 right-6 z-50 p-3 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 hover:shadow-red-500/30 transition-all border border-red-400/20 cursor-pointer flex items-center justify-center"
+            title="Voltar ao topo"
+            id="pokopia-back-to-top-button"
+          >
+            <ChevronUp size={20} className="stroke-[3]" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
     </div>
   );
