@@ -28,8 +28,8 @@ export const getPokopiaSpriteUrl = (spriteId?: string): string | null => {
 
 export const POKOPIA_HABITATS: PokopiaHabitat[] = [
   'Withered Wastelands',
-  'Rocky Ridges',
   'Bleak Beach',
+  'Rocky Ridges',
   'Sparkling Skylands',
   'Pallet Town',
   'Befriended',
