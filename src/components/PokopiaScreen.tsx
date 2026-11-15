@@ -114,7 +114,8 @@ export const getHabitatFilterButtonStyle = (habitat: PokopiaHabitat, isSelected:
 export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
   pokopiaEntries,
   setPokopiaEntries,
-  triggerToast
+  triggerToast,
+  theme = 'light'
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedHabitatFilter, setSelectedHabitatFilter] = useState<string>('ALL');
@@ -438,9 +439,11 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
           <div className="space-y-2.5">
             {filteredEntries.map((entry, index) => {
               const isEditing = editingId === entry.id;
-              // Comfort e Request estão desativados: todos os cards usam o estilo branco neutro
-              const cardBgStyle = 'bg-white text-neutral-900 border-2 border-neutral-400 shadow-md';
-              const isWhiteCard = true;
+              // Card branco no tema claro; no tema escuro segue as cores do resto do app
+              const isWhiteCard = theme !== 'dark';
+              const cardBgStyle = isWhiteCard
+                ? 'bg-white text-neutral-900 border-2 border-neutral-400 shadow-md'
+                : 'bg-bg-surface-low text-white border-2 border-outline-variant shadow-md';
 
               return (
                 <div
@@ -463,7 +466,9 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
                           onError={e => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
                         />
                       ) : (
-                        <div className="w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-lg bg-neutral-100 border border-neutral-200 flex items-center justify-center text-neutral-300">
+                        <div className={`w-16 h-16 md:w-20 md:h-20 shrink-0 rounded-lg border flex items-center justify-center ${
+                          isWhiteCard ? 'bg-neutral-100 border-neutral-200 text-neutral-300' : 'bg-bg-surface-med/40 border-outline-variant/40 text-text-muted/40'
+                        }`}>
                           <HelpCircle size={20} />
                         </div>
                       )}
@@ -475,7 +480,11 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
                             onChange={e => setEditingSpriteId(e.target.value)}
                             placeholder="Sprite"
                             title="Código do sprite (ex.: 001)"
-                            className="w-16 border rounded-lg px-2 py-1 text-xs font-mono font-bold focus:outline-none bg-neutral-100 text-neutral-900 border-neutral-400 focus:border-brand-primary"
+                            className={`w-16 border rounded-lg px-2 py-1 text-xs font-mono font-bold focus:outline-none ${
+                              isWhiteCard
+                                ? 'bg-neutral-100 text-neutral-900 border-neutral-400 focus:border-brand-primary'
+                                : 'bg-black/40 text-white border-brand-primary'
+                            }`}
                             onKeyDown={e => {
                               if (e.key === 'Enter') handleSaveEditName(entry.id);
                               if (e.key === 'Escape') setEditingId(null);
@@ -673,7 +682,7 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             onClick={scrollToTop}
-            className="fixed bottom-6 md:bottom-24 right-6 z-50 p-3 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 hover:shadow-red-500/30 transition-all border border-red-400/20 cursor-pointer flex items-center justify-center"
+            className="fixed bottom-24 right-6 z-50 p-3 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 hover:shadow-red-500/30 transition-all border border-red-400/20 cursor-pointer flex items-center justify-center"
             title="Voltar ao topo"
             id="pokopia-back-to-top-button"
           >
