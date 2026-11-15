@@ -134,8 +134,16 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
 
   // Modal states for adding Pokemon
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [batchInputText, setBatchInputText] = useState('');
-  const [ignoreDuplicates, setIgnoreDuplicates] = useState(true);
+  const [newNumber, setNewNumber] = useState('');
+  const [newSpriteId, setNewSpriteId] = useState('');
+  const [newName, setNewName] = useState('');
+
+  const closeAddModal = () => {
+    setIsAddModalOpen(false);
+    setNewNumber('');
+    setNewSpriteId('');
+    setNewName('');
+  };
 
   // Botão flutuante "voltar ao topo" (mesmo comportamento do menu POKEMON)
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -167,62 +175,28 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
   const [editingName, setEditingName] = useState('');
   const [editingSpriteId, setEditingSpriteId] = useState('');
 
-  // Calculate parsed valid lines from textarea
-  const parsedLines = useMemo(() => {
-    return batchInputText
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line.length > 0);
-  }, [batchInputText]);
-
-  // Existing names set for duplicate check
-  const existingNamesLower = useMemo(() => {
-    return new Set(pokopiaEntries.map(p => p.name.toLowerCase()));
-  }, [pokopiaEntries]);
-
-  const newValidLinesCount = useMemo(() => {
-    if (!ignoreDuplicates) return parsedLines.length;
-    return parsedLines.filter(line => !existingNamesLower.has(line.toLowerCase())).length;
-  }, [parsedLines, ignoreDuplicates, existingNamesLower]);
-
-  // Handle batch add
-  const handleConfirmBatchAdd = () => {
-    if (parsedLines.length === 0) {
-      triggerToast('Nenhum Pokémon informado para adicionar.');
+  // Adiciona um Pokémon: número (aceita letras, ex.: EV001), id do sprite e nome
+  const handleConfirmAdd = () => {
+    const number = newNumber.trim().toUpperCase();
+    const spriteId = newSpriteId.trim();
+    const name = newName.trim();
+    if (!number || !name) {
+      triggerToast('Preencha o número e o nome do Pokémon.');
       return;
     }
-
-    const seenInBatch = new Set<string>();
-    const toAdd: PokopiaEntry[] = [];
-    let skippedCount = 0;
-
-    for (const name of parsedLines) {
-      const lower = name.toLowerCase();
-      if (seenInBatch.has(lower) || (ignoreDuplicates && existingNamesLower.has(lower))) {
-        skippedCount++;
-        continue;
-      }
-      seenInBatch.add(lower);
-
-      toAdd.push({
-        id: `pkp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-        name,
-        habitat: 'Not Met',
-        comfort: '',
-        request: '',
-        createdAt: new Date().toISOString()
-      });
-    }
-
-    if (toAdd.length === 0) {
-      triggerToast('Todos os Pokémons informados já estão cadastrados na lista.');
-      return;
-    }
-
-    setPokopiaEntries(prev => [...prev, ...toAdd]);
-    triggerToast(`${toAdd.length} Pokémon(s) adicionado(s) com sucesso!${skippedCount > 0 ? ` (${skippedCount} ignorados por duplicação)` : ''}`);
-    setBatchInputText('');
-    setIsAddModalOpen(false);
+    const entry: PokopiaEntry = {
+      id: `pkp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      number,
+      spriteId: spriteId || undefined,
+      name,
+      habitat: 'Not Met',
+      comfort: '',
+      request: '',
+      createdAt: new Date().toISOString()
+    };
+    setPokopiaEntries(prev => [...prev, entry]);
+    triggerToast(`#${number} ${name} adicionado!`);
+    closeAddModal();
   };
 
   // Update entry helpers
@@ -399,7 +373,7 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
           <div className="space-y-1.5 max-w-md mx-auto">
             <h3 className="font-display font-black text-lg text-white">Nenhum Pokémon Cadastrado</h3>
             <p className="text-xs text-text-muted leading-relaxed">
-              Carregue a lista de Pokémons do jogo clicando no botão abaixo. Você poderá colar ou digitar a lista com um Pokémon por linha.
+              Adicione Pokémons clicando no botão abaixo.
             </p>
           </div>
           <button
@@ -453,7 +427,7 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
                   {/* Pokémon Name Column */}
                   <div className="col-span-6 flex items-center justify-between md:justify-start gap-2.5">
                     <div className="flex items-center gap-2 min-w-0">
-                      <span className={`text-[10px] font-mono font-bold min-w-6 shrink-0 ${isWhiteCard ? 'text-neutral-400' : 'text-white/60'}`}>
+                      <span className={`text-[10px] font-mono font-bold w-12 shrink-0 truncate ${isWhiteCard ? 'text-neutral-400' : 'text-white/60'}`}>
                         #{entry.number || index + 1}
                       </span>
                       {getPokopiaSpriteUrl(entry.spriteId) ? (
@@ -577,100 +551,104 @@ export const PokopiaScreen: React.FC<PokopiaScreenProps> = ({
         </div>
       )}
 
-      {/* MODAL: Adicionar Pokémons (Lista com cada linha = 1 Pokémon) */}
+      {/* MODAL: Adicionar Pokémon (número, sprite e nome) */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div 
-            className="bg-bg-surface-low border border-outline-variant/60 rounded-3xl p-6 w-full max-w-xl shadow-2xl space-y-5 animate-scale-up text-left"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in"
+          onClick={closeAddModal}
+        >
+          <form
+            className="bg-bg-surface-low border border-outline-variant/60 rounded-3xl p-6 w-full max-w-sm shadow-2xl space-y-4 animate-scale-up text-left"
             onClick={e => e.stopPropagation()}
+            onSubmit={e => {
+              e.preventDefault();
+              handleConfirmAdd();
+            }}
           >
-            {/* Modal Header */}
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <h3 className="font-display font-black text-lg text-white uppercase tracking-wider flex items-center gap-2">
-                  <Compass size={18} className="text-brand-primary" />
-                  Carregar Pokémons do Jogo
-                </h3>
-                <p className="text-xs text-text-muted">
-                  Cole ou digite a lista de Pokémons. Cada linha corresponderá a um Pokémon.
-                </p>
-              </div>
+            <div className="flex items-center justify-between">
+              <h3 className="font-display font-black text-lg text-white uppercase tracking-wider flex items-center gap-2">
+                <Compass size={18} className="text-brand-primary" />
+                Adicionar Pokémon
+              </h3>
               <button
                 type="button"
-                onClick={() => setIsAddModalOpen(false)}
+                onClick={closeAddModal}
                 className="text-text-muted hover:text-white p-1 rounded-lg"
               >
                 <X size={18} />
               </button>
             </div>
 
-            {/* Explanatory notes */}
-            <div className="bg-bg-surface-med/50 border border-outline-variant/30 rounded-2xl p-3 text-[11px] text-text-muted space-y-1">
-              <div className="flex items-center gap-1.5 text-text-high font-semibold">
-                <AlertCircle size={13} className="text-brand-primary" /> Regras de inicialização:
+            <div className="flex items-end gap-3">
+              <div className="w-20 h-20 shrink-0 rounded-2xl bg-bg-surface-med/40 border border-outline-variant/30 flex items-center justify-center">
+                {getPokopiaSpriteUrl(newSpriteId) ? (
+                  <img
+                    key={newSpriteId}
+                    src={getPokopiaSpriteUrl(newSpriteId)!}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                    className="w-20 h-20 object-contain"
+                    onError={e => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+                  />
+                ) : (
+                  <HelpCircle size={22} className="text-text-muted/40" />
+                )}
               </div>
-              <p>• Todo Pokémon é adicionado inicialmente com Habitat <strong className="text-white">Not Met</strong>.</p>
-            </div>
-
-            {/* Textarea Input */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <label className="font-mono font-bold text-text-high uppercase tracking-wider">
-                  Lista de Pokémons (uma linha por Pokémon):
+              <div className="grid grid-cols-2 gap-3 flex-1">
+                <label className="space-y-1">
+                  <span className="text-[10px] font-mono font-bold text-text-muted uppercase tracking-wider block">Número</span>
+                  <input
+                    type="text"
+                    value={newNumber}
+                    onChange={e => setNewNumber(e.target.value.toUpperCase())}
+                    placeholder="001"
+                    autoFocus
+                    className="w-full bg-bg-surface-med/60 border border-outline-variant/40 rounded-xl px-3 py-2 text-sm font-mono font-bold text-white placeholder-text-muted/40 focus:outline-none focus:border-brand-primary"
+                  />
                 </label>
-                <span className="font-mono text-brand-primary font-bold">
-                  {parsedLines.length} identificado(s)
-                </span>
+                <label className="space-y-1">
+                  <span className="text-[10px] font-mono font-bold text-text-muted uppercase tracking-wider block">Sprite</span>
+                  <input
+                    type="text"
+                    value={newSpriteId}
+                    onChange={e => setNewSpriteId(e.target.value)}
+                    placeholder="001"
+                    className="w-full bg-bg-surface-med/60 border border-outline-variant/40 rounded-xl px-3 py-2 text-sm font-mono font-bold text-white placeholder-text-muted/40 focus:outline-none focus:border-brand-primary"
+                  />
+                </label>
               </div>
-              <textarea
-                rows={9}
-                value={batchInputText}
-                onChange={e => setBatchInputText(e.target.value)}
-                placeholder={`Pikachu\nCharmander\nBulbasaur\nSquirtle\nEevee\nSnorlax`}
-                className="w-full bg-bg-surface-med/60 border border-outline-variant/40 rounded-2xl p-3.5 text-xs font-mono text-white placeholder-text-muted/40 focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary"
+            </div>
+
+            <label className="space-y-1 block">
+              <span className="text-[10px] font-mono font-bold text-text-muted uppercase tracking-wider block">Nome</span>
+              <input
+                type="text"
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                placeholder="Bulbasaur"
+                className="w-full bg-bg-surface-med/60 border border-outline-variant/40 rounded-xl px-3 py-2 text-sm font-bold text-white placeholder-text-muted/40 focus:outline-none focus:border-brand-primary"
               />
-            </div>
+            </label>
 
-            {/* Ignore Duplicates Toggle */}
-            <div className="flex items-center justify-between pt-1">
-              <label className="flex items-center gap-2 text-xs text-text-muted cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  checked={ignoreDuplicates}
-                  onChange={e => setIgnoreDuplicates(e.target.checked)}
-                  className="rounded border-outline-variant bg-bg-surface-med text-brand-primary focus:ring-0 cursor-pointer"
-                />
-                Ignorar nomes que já estão cadastrados na lista
-              </label>
-
-              {ignoreDuplicates && parsedLines.length > 0 && (
-                <span className="text-[11px] font-mono text-text-muted">
-                  {newValidLinesCount} novos
-                </span>
-              )}
-            </div>
-
-            {/* Modal Actions */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-outline-variant/20">
+            <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setIsAddModalOpen(false)}
+                onClick={closeAddModal}
                 className="px-4 py-2 rounded-xl bg-bg-surface-med/50 hover:bg-bg-surface-med text-text-muted hover:text-white text-xs font-semibold transition-all"
               >
                 Cancelar
               </button>
               <button
-                type="button"
-                onClick={handleConfirmBatchAdd}
-                disabled={parsedLines.length === 0}
+                type="submit"
+                disabled={!newNumber.trim() || !newName.trim()}
                 className="px-5 py-2.5 rounded-xl bg-brand-primary text-black font-display font-black text-xs uppercase tracking-wider hover:opacity-90 disabled:opacity-40 disabled:cursor-not-allowed transition-all flex items-center gap-1.5 shadow-lg shadow-brand-primary/20"
                 id="btn-confirm-add-pokemons"
               >
                 <CheckCircle2 size={14} strokeWidth={2.5} />
-                Adicionar {parsedLines.length > 0 ? `(${newValidLinesCount})` : ''}
+                Adicionar
               </button>
             </div>
-          </div>
+          </form>
         </div>
       )}
 
