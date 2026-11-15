@@ -1992,7 +1992,7 @@ export default function GamesScreen({
                 return (
                   <div
                     key={gen.id}
-                    className={`bg-bg-surface-low border rounded-3xl overflow-hidden shadow-md transition-all ${
+                    className={`@container bg-bg-surface-low border rounded-3xl overflow-hidden shadow-md transition-all ${
                       isExpanded ? 'border-outline-variant' : 'border-outline-variant/30 hover:border-outline-variant/60'
                     }`}
                   >
@@ -2005,9 +2005,9 @@ export default function GamesScreen({
                           setExpandedGens([...expandedGens, gen.id]);
                         }
                       }}
-                      className="px-6 py-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer select-none bg-bg-surface-low hover:bg-bg-surface-med/25 transition-all"
+                      className="px-6 py-5 flex flex-col @2xl:flex-row @2xl:items-center justify-between gap-4 cursor-pointer select-none bg-bg-surface-low hover:bg-bg-surface-med/25 transition-all"
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-4 min-w-0">
                         <div className="w-10 h-10 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-center justify-center shrink-0">
                           <span className="text-red-400 font-display font-black text-sm">G{gen.id.replace('gen', '')}</span>
                         </div>
@@ -2028,8 +2028,8 @@ export default function GamesScreen({
                       </div>
 
                       {/* Progress bar in header */}
-                      <div className="flex items-center gap-4 w-full sm:w-auto">
-                        <div className="flex-1 sm:w-32 bg-bg-surface-med/50 h-2 rounded-full overflow-hidden border border-outline-variant/10">
+                      <div className="flex items-center gap-4 w-full @2xl:w-auto shrink-0">
+                        <div className="flex-1 @2xl:flex-none @2xl:w-32 bg-bg-surface-med/50 h-2 rounded-full overflow-hidden border border-outline-variant/10">
                           <div
                             className={pokedexViewMode === 'shiny' ? "bg-amber-400 h-full rounded-full transition-all duration-500" : "bg-red-500 h-full rounded-full transition-all duration-500"}
                             style={{ width: `${genPercent}%` }}
@@ -3885,7 +3885,7 @@ export default function GamesScreen({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             onClick={scrollToTop}
-            className="fixed bottom-6 md:bottom-24 right-6 z-50 p-3 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 hover:shadow-red-500/30 transition-all border border-red-400/20 cursor-pointer flex items-center justify-center"
+            className="fixed bottom-24 right-6 z-50 p-3 rounded-full bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20 hover:shadow-red-500/30 transition-all border border-red-400/20 cursor-pointer flex items-center justify-center"
             title="Voltar ao topo"
             id="back-to-top-button"
           >
